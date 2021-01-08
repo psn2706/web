@@ -4,9 +4,12 @@ using System.Collections.Generic;
 using Renci.SshNet;
 class Web
 {
-    public static SshClient client;
+    static SshClient client;
     public static string room;
     public static int[] index;
+    /// <summary>
+    /// Инициализация веб-клиента. Установка соединения с сервером.
+    /// </summary>
     public static void Init()
     {
         try
@@ -24,190 +27,177 @@ class Web
         }
         catch
         {
-            // Напиши "Проверьте подключение к интернету и нажмите ОК", перезапусти Init() после нажатия ОК
+            // Напиши "Проверьте подключение к интернету и нажмите ОК", после нажатия ОК:
+            // return Init();
         }
     }
-    public static string CreateRoom(string Room="room", int RoomPlayers=1)
+    static string RunCommand(string str)
+    {
+        try
+        {
+            string ans = client.RunCommand(str).Result;
+            Thread.Sleep(220);
+            return ans;
+        }
+        catch
+        {
+            // Напиши "Проверьте подключение к интернету и нажмите ОК", после нажатия ОК:
+            // return RunCommand(str);
+        }
+        return "-1";
+    }
+    /// <summary>
+    /// Создание комнаты.
+    /// </summary>
+    /// <param name="Room">Название комнаты.</param>
+    /// <param name="RoomPlayers">Вместимость комнаты.</param>
+    /// <returns></returns>
+    public static string CreateRoom(string Room, int RoomPlayers)
     {
         string spec = "\\/:?\"*<>|";
         foreach (char c in spec)
             if (Room.Contains(c.ToString()))
                 return $"Неверный формат ввода, не используйте знаки {spec}";
 
-        string res = client.RunCommand($"if [ -e rooms/{Room}/ ]; then echo 'Exists'; fi").Result;
-        Thread.Sleep(220);
-        if (res == "Exists\n")
+        if (RunCommand($"if [ -e rooms/{Room}/ ]; then echo -n 'Exists'; fi") == "Exists")
             return "Комната с таким названием уже существует";
         else
         {
             string
                 cmd1 = $"mkdir rooms/{Room}/",
-                cmd2 = $"echo '0' > rooms/{Room}/index",
-                cmd3 = $"echo 'Free' > rooms/{Room}/roomStatus",
-                cmd4 = $"echo '{RoomPlayers}' > rooms/{Room}/roomPlayers";
+                cmd2 = $"echo -n '0' > rooms/{Room}/index",
+                cmd3 = $"echo -n 'Free' > rooms/{Room}/roomStatus",
+                cmd4 = $"echo -n '{RoomPlayers}' > rooms/{Room}/roomPlayers";
 
-            client.RunCommand($"{cmd1} && {cmd2} && {cmd3} && {cmd4}");
-            Thread.Sleep(220);
+            RunCommand($"{cmd1} && {cmd2} && {cmd3} && {cmd4}");
+
             return "Комната успешно создана!";
         }
     }
-    public static void InitRoom(string Room="room", int Players=1, string Parameters = "", string Names = "")
+    /// <summary>
+    /// Инициализация устройства в комнату.
+    /// </summary>
+    /// <param name="Room">Название комнаты.</param>
+    /// <param name="Players">Количество игроков с данного устройства.</param>
+    /// <param name="Parameters">Начальные параметры игры.</param>
+    /// <param name="Names">Имена людей.</param>
+    /// <returns></returns>
+    public static string InitRoom(string Room, int Players, string Parameters, string Names)
     {
-        try
-        {
-            room = Room;
+        if (Players <= 0)
+            return "Некорректное значение количества игроков";
 
-            string res = client.RunCommand($"if [ -e rooms/{Room}/ ]; then echo 'Exists'; fi").Result;
-            Thread.Sleep(220);
-            if (res != "Exists\n")
-                throw new Exception("Комната не найдена");
+        if (RunCommand($"if [ -e rooms/{Room}/ ]; then echo -n 'Exists'; fi") != "Exists")
+            return "Комната не найдена";
 
-            res = client.RunCommand($"cat rooms/{Room}/roomStatus").Result;
-            Thread.Sleep(220);
-            if (res == "Running\n")
-                throw new Exception("В этой комнате идёт игра");
+        if (RunCommand($"cat rooms/{Room}/roomStatus") == "Running")
+            return "В этой комнате идёт игра";
 
-            res = client.RunCommand($"cat rooms/{Room}/roomPlayers").Result;
-            Thread.Sleep(220);
-            int pnow = PlayersNow(), rpl= Convert.ToInt32(res);
-            if (pnow + Players > rpl)
-                throw new Exception("В этой комнате не поместится столько игроков");
+        int Playnow = PlayersNow(Room), Playroom = Convert.ToInt32(RunCommand($"cat rooms/{Room}/roomPlayers"));
 
-            if (Players <= 0)
-                throw new Exception("Некорректное значение количества игроков");
+        if (Playnow + Players > Playroom)
+            return "Эта комната уже заполнена";
 
-            index = new int[Players];
-            int x = Convert.ToInt32(client.RunCommand($"cat rooms/{room}/index").Result);
-            for (int i = 0; i < Players; ++i)
-            {
-                index[i] = x;
-                ++x;
-            }
-            client.RunCommand($"echo '{x}' > rooms/{room}/index");
-            Thread.Sleep(220);
+        room = Room;
+        index = new int[Players];
+        int x = Convert.ToInt32(RunCommand($"cat rooms/{Room}/index"));
 
-            if (index[0] == 0)
-            {
-                client.RunCommand($"echo '{Parameters}' > rooms/{room}/parameters");
-                Thread.Sleep(220);
-            }
-            
-            client.RunCommand($"echo -n '{Names}' >> rooms/{room}/names");
-            Thread.Sleep(220);
+        for (int i = 0; i < Players; ++i, ++x) index[i] = x;
 
-            if (pnow + Players == rpl)
-                RunRoom();
-        }
-        catch (Exception e)
-        {
-            if (e.Message == "Комната не найдена") ;
-            else if (e.Message == "В этой комнате идёт игра") ;
-            else if (e.Message == "В этой комнате не поместится столько игроков") ;
-            else if (e.Message == "Некорректное значение количества игроков") ;
-            else; // Напиши "Проверьте подключение к интернету и нажмите ОК", перезапусти InitRoom() после нажатия ОК
-        }
+        RunCommand($"echo -n '{x}' > rooms/{Room}/index");
+
+        if (index[0] == 0) RunCommand($"echo -n '{Parameters}' > rooms/{Room}/parameters");
+
+        RunCommand($"echo -n '{Names}' >> rooms/{Room}/names");
+
+        if (Playnow + Players == Playroom)
+            RunRoom(Room);
+
+        return $"Вы присоединились к комнате {room}";
     }
+    /// <summary>
+    /// Передача строки для хранения на сервере, используется после инициализации устройства в комнату.
+    /// </summary>
+    /// <param name="str">Строка для сохранения на сервере.</param>
     public static void Write(string str)
     {
-        try { client.RunCommand($"echo '{str}' > rooms/{room}/file"); Thread.Sleep(220); }
-        catch
-        {
-            // Напиши "Проверьте подключение к интернету и нажмите ОК", перезапусти Write() после нажатия ОК
-        }
+        RunCommand($"echo -n '{str}' > rooms/{room}/file");
     }
+    /// <summary>
+    /// Получение строки, соответсвующей последнему использованию Write().
+    /// </summary>
+    /// <returns></returns>
     public static string Read()
     {
-        try
-        {
-            string str = client.RunCommand($"cat rooms/{room}/file").Result; Thread.Sleep(220);
-            return str.Substring(0, str.Length - 1);
-        }
-        catch
-        {
-            // Напиши "Проверьте подключение к интернету и нажмите ОК", перезапусти Read() после нажатия ОК
-        }
-        return "\0";
+        return RunCommand($"cat rooms/{room}/file");
     }
     public static bool IsRoomFull()
     {
-        try { bool stat = client.RunCommand($"cat rooms/{room}/roomStatus").Result == "Running\n"; Thread.Sleep(220); return stat; }
-        catch
-        {
-            // Напиши "Проверьте подключение к интернету и нажмите ОК", перезапусти IsRoomFull() после нажатия ОК
-        }
-        return false;
+        return RunCommand($"cat rooms/{room}/roomStatus") == "Running";
     }
+    /// <summary>
+    /// Очищение комнаты после её использования.
+    /// </summary>
     public static void ClearRoom()
     {
         string
-                cmd1 = $"echo '0' > rooms/{room}/index",
-                cmd2 = $"echo 'Free' > rooms/{room}/roomStatus",
-                cmd3 = $"rm rooms/{room}/names";
+                cmd1 = $"echo -n '0' > rooms/{room}/index",
+                cmd2 = $"rm rooms/{room}/names",
+                cmd3 = $"rm rooms/{room}/parameters",
+                cmd4 = $"echo -n 'Free' > rooms/{room}/roomStatus";
 
-        client.RunCommand($"if [ -e rooms/{room}/ ]; then {cmd1} && {cmd2} && {cmd3}; fi"); Thread.Sleep(220);
+        RunCommand($"if [ -e rooms/{room}/ ]; then {cmd1} && {cmd2} && {cmd3} && {cmd4}; fi");
     }
+    /// <summary>
+    /// Удаление комнаты после её использования.
+    /// </summary>
     public static void DeleteRoom()
     {
-        client.RunCommand($"if [ -e rooms/{room}/ ]; then rm -r rooms/{room}/; fi"); Thread.Sleep(220);
+        if (room != "") RunCommand($"if [ -e rooms/{room}/ ]; then rm -r rooms/{room}/; fi");
     }
+    /// <summary>
+    /// Удаление комнаты по названию.
+    /// </summary>
     public static void DeleteRoom(string Room)
     {
-        client.RunCommand($"if [ -e rooms/{Room}/ ]; then rm -r rooms/{Room}/; fi"); Thread.Sleep(220);
+        if (room != "") RunCommand($"if [ -e rooms/{Room}/ ]; then rm -r rooms/{Room}/; fi");
     }
-    public static int PlayersNow()
+    /// <summary>
+    /// Количество игроков в комнате.
+    /// </summary>
+    /// <param name="Room">Название комнаты.</param>
+    /// <returns></returns>
+    public static int PlayersNow(string Room)
     {
-        try { 
-            int x = Convert.ToInt32(client.RunCommand($"cat rooms/{room}/index").Result); Thread.Sleep(220); 
-            return x; }
-        catch { }
-        return 0;
+        return Convert.ToInt32(RunCommand($"cat rooms/{Room}/index"));
     }
+    /// <summary>
+    /// Вместимость комнаты.
+    /// </summary>
+    /// <param name="Room">Название комнаты.</param>
+    /// <returns></returns>
     public static int RoomPlayers(string Room)
     {
-        try { int x = Convert.ToInt32(client.RunCommand($"cat rooms/{Room}/roomPlayers").Result); Thread.Sleep(220); return x; }
-        catch { }
-        return 0;
+        return Convert.ToInt32(RunCommand($"cat rooms/{Room}/roomPlayers")); ;
     }
-    public static void RunRoom()
-    {
-        client.RunCommand($"echo 'Running' > rooms/{room}/roomStatus");
-        Thread.Sleep(220);
-    }
+    /// <summary>
+    /// Параметры игры в комнате.
+    /// </summary>
+    /// <returns></returns>
     public static string Parameters()
     {
-        try
-        {
-            string str = client.RunCommand($"cat rooms/{room}/parameters").Result;
-            Thread.Sleep(220);
-            return str.Substring(0, str.Length - 1);
-        }
-        catch
-        {
-            // Напиши "Проверьте подключение к интернету и нажмите ОК", перезапусти Parameters() после нажатия ОК
-        }
-        return "\0";
+        return RunCommand($"cat rooms/{room}/parameters");
     }
+    /// <summary>
+    /// Имена людей в комнате.
+    /// </summary>
+    /// <returns></returns>
     public static string Names()
     {
-        try
-        {
-            string str = client.RunCommand($"cat rooms/{room}/names").Result;
-            Thread.Sleep(220);
-            return str.Substring(0, str.Length - 1);
-        }
-        catch
-        {
-            // Напиши "Проверьте подключение к интернету и нажмите ОК", перезапусти Names() после нажатия ОК
-        }
-        return "\0";
+        return RunCommand($"cat rooms/{room}/names");
     }
-    public static int _Main()
+    static void RunRoom(string Room)
     {
-        Init();
-        Console.WriteLine(CreateRoom("m", 3));
-        InitRoom("m", 3);
-        Write("d|");
-        Console.WriteLine(Read()=="d|");
-        return 0;
+        RunCommand($"echo -n 'Running' > rooms/{Room}/roomStatus");
     }
 }
