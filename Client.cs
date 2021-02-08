@@ -37,9 +37,9 @@ public class Web
     private static string r;
     public static string create(int n) => getResponse($"CREATE {n}");
     public static string create(int n, int x) => getResponse($"CREATEX {n},{x}");
-    public static string join(int k, int x, string names, string par)
+    public static string join(int k, int x, string nam, string par)
     {
-        string ans = getResponse($"JOIN {k},{x},{names},{par}");
+        string ans = getResponse($"JOIN {k},{x},{nam},{par}");
         int s = ans.Length - 1;
         if (ans[s]=='>')
         {
@@ -92,10 +92,7 @@ public class Web
 
             return response;
         }
-        catch
-        {
-            return "-1";
-        }
+        catch { return "-1"; }
     }
 
     private static void ConnectCallback(IAsyncResult ar)
@@ -169,16 +166,8 @@ public class Web
 
         // Complete sending the data to the remote device.  
         int bytesSent = client.EndSend(ar);
-        // Console.WriteLine("Sent {0} bytes to server.", bytesSent);
 
         // Signal that all bytes have been sent.  
         sendDone.Set();
-    }
-
-    public static int Main()
-    {
-        Console.WriteLine(create(2));
-        Console.ReadLine();
-        return 0;
     }
 }
