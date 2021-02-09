@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Text;
 
-// State object for receiving data from remote device.  
+// State object for receiving data from remote device.
 public class StateObject
 {
     // Client socket.  
@@ -24,47 +24,43 @@ public class Web
     private static int port = 8000;
 
     // ManualResetEvent instances signal completion.  
-    private static ManualResetEvent connectDone =
-        new ManualResetEvent(false);
-    private static ManualResetEvent sendDone =
-        new ManualResetEvent(false);
-    private static ManualResetEvent receiveDone =
-        new ManualResetEvent(false);
+    private static ManualResetEvent connectDone;
+    private static ManualResetEvent sendDone;
+    private static ManualResetEvent receiveDone;
 
     // The response from the remote device.  
     private static string response = string.Empty;
 
-    private static string r;
+    public static string room;
     public static string create(int n) => getResponse($"CREATE {n}");
     public static string create(int n, int x) => getResponse($"CREATEX {n},{x}");
     public static string join(int k, int x, string nam, string par)
     {
-        string ans = getResponse($"JOIN {k},{x},{nam},{par}");
-        int s = ans.Length - 1;
-        if (ans[s]=='>')
-        {
-            int m = ans.IndexOf('<');
-            r = ans.Substring(m + 1, s - m - 1);
-        }
+        string ans=getResponse($"JOIN {k},{x},{nam},{par}");
+        if (ans[0] >= '0' && ans[0] <= '9') room = x.ToString();
         return ans;
     }
-    public static string rwait() => getResponse($"RWAIT {r}");
-    public static string nam() => getResponse($"NAM {r}");
-    public static string par() => getResponse($"PAR {r}");
-    public static string set(string str) => getResponse($"SET {str},{r}");
-    public static string get() => getResponse($"GET {r}");
-    public static string wait() => getResponse($"WAIT {r}");
-    public static string delete() => getResponse($"DELETE {r}");
-    public static string clear() => getResponse($"CLEAR {r}");
+    public static string rwait() => getResponse($"RWAIT {room}");
+    public static string nam() => getResponse($"NAM {room}");
+    public static string par() => getResponse($"PAR {room}");
+    public static string set(string str) => getResponse($"SET {str},{room}");
+    public static string get() => getResponse($"GET {room}");
+    public static string wait() => getResponse($"WAIT {room}");
+    public static string delete() => getResponse($"DELETE {room}");
+    public static string clear() => getResponse($"CLEAR {room}");
 
     private static string getResponse(string str)
     {
+        connectDone = new ManualResetEvent(false);
+        sendDone = new ManualResetEvent(false);
+        receiveDone = new ManualResetEvent(false);
         // Connect to a remote device.  
         try
         {
             // Establish the remote endpoint for the socket.
             //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             //IPAddress ipAddress = ipHostInfo.AddressList[1];
+            //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
             IPHostEntry ipHostInfo = Dns.GetHostEntry(ip);
             IPAddress ipAddress = ipHostInfo.AddressList[0];
             IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
@@ -140,16 +136,14 @@ public class Web
         else
         {
             // All the data has arrived; put it in response.  
-            if (state.sb.Length > 1)
-            {
-                response = state.sb.ToString();
-            }
+            response = state.sb.ToString();
+
             // Signal that all bytes have been received.  
             receiveDone.Set();
         }
     }
 
-    private static void Send(Socket client, String data)
+    private static void Send(Socket client, string data)
     {
         // Convert the string data to byte data using ASCII encoding.  
         byte[] byteData = Encoding.UTF8.GetBytes(data);
