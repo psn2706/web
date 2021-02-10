@@ -31,13 +31,13 @@ public class Web
     // The response from the remote device.  
     private static string response = string.Empty;
 
-    public static string room;
+    public static int room;
     public static string create(int n) => getResponse($"CREATE {n}");
     public static string create(int n, int x) => getResponse($"CREATEX {n},{x}");
     public static string join(int k, int x, string nam, string par)
     {
         string ans=getResponse($"JOIN {k},{x},{nam},{par}");
-        if (ans[0] >= '0' && ans[0] <= '9') room = x.ToString();
+        if (ans[0] >= '0' && ans[0] <= '9') room = x;
         return ans;
     }
     public static string rwait() => getResponse($"RWAIT {room}");
