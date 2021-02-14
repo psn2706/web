@@ -47,7 +47,9 @@ public class Web
     public static string get() => getResponse($"GET {room}");
     public static string wait() => getResponse($"WAIT {room}");
     public static string delete() => getResponse($"DELETE {room}");
+    public static string delete(int x) => getResponse($"DELETE {x}");
     public static string clear() => getResponse($"CLEAR {room}");
+    public static string clear(int x) => getResponse($"CLEAR {x}");
 
     private static string getResponse(string str)
     {
