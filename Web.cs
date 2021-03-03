@@ -1,20 +1,14 @@
-﻿using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using System.Text;
-
-// State object for receiving data from remote device.
+﻿// State object for receiving data from remote device.
 public class StateObject
 {
     // Client socket.  
-    public Socket workSocket = null;
+    public System.Net.Sockets.Socket workSocket = null;
     // Size of receive buffer.  
     public const int BufferSize = 1024 * 1024;
     // Receive buffer.  
     public byte[] buffer = new byte[BufferSize];
     // Received data string.  
-    public StringBuilder sb = new StringBuilder();
+    public System.Text.StringBuilder sb = new System.Text.StringBuilder();
 }
 
 public class Web
@@ -24,9 +18,9 @@ public class Web
     private static int port = 8000;
 
     // ManualResetEvent instances signal completion.  
-    private static ManualResetEvent connectDone;
-    private static ManualResetEvent sendDone;
-    private static ManualResetEvent receiveDone;
+    private static System.Threading.ManualResetEvent connectDone;
+    private static System.Threading.ManualResetEvent sendDone;
+    private static System.Threading.ManualResetEvent receiveDone;
 
     // The response from the remote device.  
     private static string response = string.Empty;
@@ -53,9 +47,9 @@ public class Web
 
     private static string getResponse(string str)
     {
-        connectDone = new ManualResetEvent(false);
-        sendDone = new ManualResetEvent(false);
-        receiveDone = new ManualResetEvent(false);
+        connectDone = new System.Threading.ManualResetEvent(false);
+        sendDone = new System.Threading.ManualResetEvent(false);
+        receiveDone = new System.Threading.ManualResetEvent(false);
         // Connect to a remote device.  
         try
         {
@@ -63,17 +57,17 @@ public class Web
             //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             //IPAddress ipAddress = ipHostInfo.AddressList[1];
             //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(ip);
-            IPAddress ipAddress = ipHostInfo.AddressList[0];
-            IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
+            System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
+            System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
+            System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
 
             // Create a TCP/IP socket.  
-            Socket client = new Socket(ipAddress.AddressFamily,
-                SocketType.Stream, ProtocolType.Tcp);
+            System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
+                System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
 
             // Connect to the remote endpoint.  
             client.BeginConnect(remoteEP,
-                new AsyncCallback(ConnectCallback), client);
+                new System.AsyncCallback(ConnectCallback), client);
             connectDone.WaitOne();
 
             // Send test data to the remote device.  
@@ -85,7 +79,7 @@ public class Web
             receiveDone.WaitOne();
 
             // Release the socket.  
-            client.Shutdown(SocketShutdown.Both);
+            client.Shutdown(System.Net.Sockets.SocketShutdown.Both);
             client.Close();
 
             return response;
@@ -93,10 +87,10 @@ public class Web
         catch { return "-1"; }
     }
 
-    private static void ConnectCallback(IAsyncResult ar)
+    private static void ConnectCallback(System.IAsyncResult ar)
     {
         // Retrieve the socket from the state object.  
-        Socket client = (Socket)ar.AsyncState;
+        System.Net.Sockets.Socket client = (System.Net.Sockets.Socket)ar.AsyncState;
 
         // Complete the connection.  
         client.EndConnect(ar);
@@ -105,7 +99,7 @@ public class Web
         connectDone.Set();
     }
 
-    private static void Receive(Socket client)
+    private static void Receive(System.Net.Sockets.Socket client)
     {
         // Create the state object.  
         StateObject state = new StateObject();
@@ -113,15 +107,15 @@ public class Web
 
         // Begin receiving the data from the remote device.  
         client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-            new AsyncCallback(ReceiveCallback), state);
+            new System.AsyncCallback(ReceiveCallback), state);
     }
 
-    private static void ReceiveCallback(IAsyncResult ar)
+    private static void ReceiveCallback(System.IAsyncResult ar)
     {
         // Retrieve the state object and the client socket   
         // from the asynchronous state object.  
         StateObject state = (StateObject)ar.AsyncState;
-        Socket client = state.workSocket;
+        System.Net.Sockets.Socket client = state.workSocket;
 
         // Read data from the remote device.  
         int bytesRead = client.EndReceive(ar);
@@ -129,11 +123,11 @@ public class Web
         if (bytesRead > 0)
         {
             // There might be more data, so store the data received so far.  
-            state.sb.Append(Encoding.UTF8.GetString(state.buffer, 0, bytesRead));
+            state.sb.Append(System.Text.Encoding.UTF8.GetString(state.buffer, 0, bytesRead));
 
             // Get the rest of the data.  
             client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ReceiveCallback), state);
+                new System.AsyncCallback(ReceiveCallback), state);
         }
         else
         {
@@ -145,20 +139,20 @@ public class Web
         }
     }
 
-    private static void Send(Socket client, string data)
+    private static void Send(System.Net.Sockets.Socket client, string data)
     {
         // Convert the string data to byte data using ASCII encoding.  
-        byte[] byteData = Encoding.UTF8.GetBytes(data);
+        byte[] byteData = System.Text.Encoding.UTF8.GetBytes(data);
 
         // Begin sending the data to the remote device.  
         client.BeginSend(byteData, 0, byteData.Length, 0,
-            new AsyncCallback(SendCallback), client);
+            new System.AsyncCallback(SendCallback), client);
     }
 
-    private static void SendCallback(IAsyncResult ar)
+    private static void SendCallback(System.IAsyncResult ar)
     {
         // Retrieve the socket from the state object.  
-        Socket client = (Socket)ar.AsyncState;
+        System.Net.Sockets.Socket client = (System.Net.Sockets.Socket)ar.AsyncState;
 
         // Complete sending the data to the remote device.  
         int bytesSent = client.EndSend(ar);
