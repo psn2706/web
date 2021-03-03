@@ -1,6 +1,4 @@
-﻿using System;
-
-class Test
+﻿class Test
 {
     public static void test_message()
     {
@@ -9,7 +7,7 @@ class Test
         Web.join(1, Web.room, "nam", "par");
         Web.rwait();
         Web.set("hi!");
-        Console.WriteLine(Web.get());
+        System.Console.WriteLine(Web.get());
         Web.delete();
     }
 }
