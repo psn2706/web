@@ -1,4 +1,5 @@
-﻿class Test
+﻿using UnityEngine;
+class Test
 {
     public static void test_message()
     {
@@ -7,7 +8,7 @@
         Web.join(1, Web.room, "nam", "par");
         Web.rwait();
         Web.set("hi!");
-        System.Console.WriteLine(Web.get());
+        Debug.Log(Web.get());
         Web.delete();
     }
 }

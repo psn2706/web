@@ -1,4 +1,5 @@
-﻿// State object for receiving data from remote device.
+﻿using UnityEngine;
+// State object for receiving data from remote device.
 public class StateObject
 {
     // Client socket.  
