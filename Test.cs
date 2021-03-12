@@ -13,7 +13,7 @@ class Test
     {
 
         Web.room = 0;
-        
+
         Web.create(1, Web.room);
         wait(); clear();
 
@@ -27,12 +27,25 @@ class Test
         wait(); clear();
 
         Web.get();
-        wait(); 
+        wait();
         Debug.Log(Web.res);
         clear();
 
         Web.delete();
         wait(); clear();
 
+    }
+
+    /// <summary>
+    /// It takes 50 sec
+    /// </summary>
+    /// <param name="count"></param>
+    public static void delete_all(int count = 100)
+    {
+        for (int i=0; i<count; ++i)
+        {
+            Web.delete(i);
+            wait(); clear();
+        }
     }
 }
