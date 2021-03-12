@@ -25,70 +25,82 @@ public class Web
     // The response from the remote device.  
     private static string response = string.Empty;
 
+    // The locker used to sync threads
+    static object locker = new object();
+
+    public static string res = string.Empty;
     public static int room;
-    public static string create(int n) => getResponse($"CREATE {n}");
-    public static string create(int n, int x) => getResponse($"CREATEX {n},{x}");
-    public static string join(int k, int x, string nam, string par)
+    public static void create(int n) => getResponse($"CREATE {n}");
+    public static void create(int n, int x) => getResponse($"CREATEX {n},{x}");
+    public static void join(int k, int x, string nam, string par)
     {
-        string ans = getResponse($"JOIN {k},{x},{nam},{par}");
-        if (ans[0] >= '0' && ans[0] <= '9') room = x;
-        return ans;
+        getResponse($"JOIN {k},{x},{nam},{par}");
+        room = x;
     }
-    public static string rwait() => getResponse($"RWAIT {room}");
-    public static string nam() => getResponse($"NAM {room}");
-    public static string par() => getResponse($"PAR {room}");
-    public static string set(string str) => getResponse($"SET {str},{room}");
-    public static string get() => getResponse($"GET {room}");
-    public static string wait() => getResponse($"WAIT {room}");
-    public static string delete() => getResponse($"DELETE {room}");
-    public static string delete(int x) => getResponse($"DELETE {x}");
-    public static string clear() => getResponse($"CLEAR {room}");
-    public static string clear(int x) => getResponse($"CLEAR {x}");
-
-    private static string getResponse(string str)
+    public static void rwait() => getResponse($"RWAIT {room}");
+    public static void nam() => getResponse($"NAM {room}");
+    public static void par() => getResponse($"PAR {room}");
+    public static void set(string str) => getResponse($"SET {str},{room}");
+    public static void get() => getResponse($"GET {room}");
+    public static void wait() => getResponse($"WAIT {room}");
+    public static void delete() => getResponse($"DELETE {room}");
+    public static void delete(int x) => getResponse($"DELETE {x}");
+    public static void clear() => getResponse($"CLEAR {room}");
+    public static void clear(int x) => getResponse($"CLEAR {x}");
+    private static void getResponse(string str)
     {
-        try
+        var thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
+        thread.Start(str);
+    }
+    private static void get(object str)
+    {
+        lock(locker)
         {
-            // Connect to a remote device. 
-            connectDone = new System.Threading.ManualResetEvent(false);
-            sendDone = new System.Threading.ManualResetEvent(false);
-            receiveDone = new System.Threading.ManualResetEvent(false);
+            try
+            {
+                response = string.Empty;
 
-            // Establish the remote endpoint for the socket.
-            //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            //IPAddress ipAddress = ipHostInfo.AddressList[1];
-            //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
-            System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
-            System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
-            System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
+                // Connect to a remote device. 
+                connectDone = new System.Threading.ManualResetEvent(false);
+                sendDone = new System.Threading.ManualResetEvent(false);
+                receiveDone = new System.Threading.ManualResetEvent(false);
 
-            // Create a TCP/IP socket.  
-            System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
-                System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+                // Establish the remote endpoint for the socket.
+                //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+                //IPAddress ipAddress = ipHostInfo.AddressList[1];
+                //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
+                System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
+                System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
+                System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
 
-            // Connect to the remote endpoint.  
-            client.BeginConnect(remoteEP,
-                new System.AsyncCallback(ConnectCallback), client);
-            connectDone.WaitOne();
+                // Create a TCP/IP socket.  
+                System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
+                    System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
 
-            // Send test data to the remote device.  
-            Send(client, str);
-            sendDone.WaitOne();
+                // Connect to the remote endpoint.  
+                client.BeginConnect(remoteEP,
+                    new System.AsyncCallback(ConnectCallback), client);
+                connectDone.WaitOne();
 
-            // Receive the response from the remote device.  
-            Receive(client);
-            receiveDone.WaitOne();
+                // Send test data to the remote device.  
+                Send(client, (string)str);
+                sendDone.WaitOne();
 
-            // Release the socket.  
-            client.Shutdown(System.Net.Sockets.SocketShutdown.Both);
-            client.Close();
+                // Receive the response from the remote device.  
+                Receive(client);
+                receiveDone.WaitOne();
 
-            if (response == string.Empty)
-                response = "-1";
+                // Release the socket.  
+                client.Shutdown(System.Net.Sockets.SocketShutdown.Both);
+                client.Close();
 
-            return response;
+                if (response == string.Empty)
+                    response = "-1";
+
+                res = response;
+            }
+            catch { res = "-1"; }
         }
-        catch { return "-1"; }
     }
 
     private static void ConnectCallback(System.IAsyncResult ar)
