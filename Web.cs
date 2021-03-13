@@ -26,27 +26,28 @@ public class Web
     private static string response = string.Empty;
 
     // The locker used to sync threads
-    static object locker = new object();
-
+    private static object locker = new object();
+    private const string sep = "#";
+    
     public static string res = string.Empty;
     public static int room;
-    public static void create(int n) => getResponse($"CREATE {n}");
-    public static void create(int n, int x) => getResponse($"CREATEX {n},{x}");
+    public static void create(int n) => getResponse($"CREATE{sep}{n}");
+    public static void create(int n, int x) => getResponse($"CREATEX{sep}{n}{sep}{x}");
     public static void join(int k, int x, string nam, string par)
     {
-        getResponse($"JOIN {k},{x},{nam},{par}");
+        getResponse($"JOIN{sep}{k}{sep}{x}{sep}{nam}{sep}{par}");
         room = x;
     }
-    public static void rwait() => getResponse($"RWAIT {room}");
-    public static void nam() => getResponse($"NAM {room}");
-    public static void par() => getResponse($"PAR {room}");
-    public static void set(string str) => getResponse($"SET {str},{room}");
-    public static void get() => getResponse($"GET {room}");
-    public static void wait() => getResponse($"WAIT {room}");
-    public static void delete() => getResponse($"DELETE {room}");
-    public static void delete(int x) => getResponse($"DELETE {x}");
-    public static void clear() => getResponse($"CLEAR {room}");
-    public static void clear(int x) => getResponse($"CLEAR {x}");
+    public static void rwait() => getResponse($"RWAIT{sep}{room}");
+    public static void nam() => getResponse($"NAM{sep}{room}");
+    public static void par() => getResponse($"PAR{sep}{room}");
+    public static void set(string str) => getResponse($"SET{sep}{room}{sep}{str}");
+    public static void get() => getResponse($"GET{sep}{room}");
+    public static void wait(int i) => getResponse($"WAIT{sep}{room}{sep}{i}");
+    public static void delete() => getResponse($"DELETE{sep}{room}");
+    public static void delete(int x) => getResponse($"DELETE{sep}{x}");
+    public static void clear() => getResponse($"CLEAR{sep}{room}");
+    public static void clear(int x) => getResponse($"CLEAR{sep}{x}");
     private static void getResponse(string str)
     {
         var thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
@@ -54,7 +55,7 @@ public class Web
     }
     private static void get(object str)
     {
-        lock(locker)
+        lock (locker)
         {
             try
             {
