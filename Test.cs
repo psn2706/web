@@ -7,10 +7,7 @@ class Test
     }
     public static void test_message()
     {
-
-        Web.room = 0;
-        
-        Web.create(1, Web.room);
+        Web.create(1);
         wait();
 
         Web.join(1, Web.room, "nam", "par");
@@ -31,7 +28,10 @@ class Test
     }
     public static void delete_all(int count = 100)
     {
-        for (int i=0; i<count; ++i) Web.delete(i);
-        wait();
+        for (int i = 0; i < count; ++i)
+        {
+            Web.delete(i);
+            wait();
+        }
     }
 }

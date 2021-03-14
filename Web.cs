@@ -4,7 +4,7 @@ public class StateObject
     // Client socket.  
     public System.Net.Sockets.Socket workSocket = null;
     // Size of receive buffer.  
-    public const int BufferSize = 1024*1024;
+    public const int BufferSize = 1024 * 1024;
     // Receive buffer.  
     public byte[] buffer = new byte[BufferSize];
     // Received data string.  
@@ -28,11 +28,16 @@ public class Web
     // The locker used to sync threads
     private static object locker = new object();
     private const string sep = "#";
-    
+
     public static string res = string.Empty;
-    public static int room;
+    public static int room = 0;
+    public static int index = 0;
     public static void create(int n) => getResponse($"CREATE{sep}{n}");
-    public static void create(int n, int x) => getResponse($"CREATEX{sep}{n}{sep}{x}");
+    public static void create(int n, int x)
+    {
+        getResponse($"CREATEX{sep}{n}{sep}{x}");
+        room = x;
+    }
     public static void join(int k, int x, string nam, string par)
     {
         getResponse($"JOIN{sep}{k}{sep}{x}{sep}{nam}{sep}{par}");
@@ -43,7 +48,7 @@ public class Web
     public static void par() => getResponse($"PAR{sep}{room}");
     public static void set(string str) => getResponse($"SET{sep}{room}{sep}{str}");
     public static void get() => getResponse($"GET{sep}{room}");
-    public static void wait(int i) => getResponse($"WAIT{sep}{room}{sep}{i}");
+    public static void wait() => getResponse($"WAIT{sep}{room}{sep}{index}");
     public static void delete() => getResponse($"DELETE{sep}{room}");
     public static void delete(int x) => getResponse($"DELETE{sep}{x}");
     public static void clear() => getResponse($"CLEAR{sep}{room}");
@@ -98,6 +103,19 @@ public class Web
 
                 if (response == string.Empty)
                     response = "-1";
+
+                string s = (string)str;
+
+                if (s.StartsWith($"CREATE{sep}"))
+                {
+                    string[] split = response.Split();
+                    int len = split.Length;
+
+                    room = System.Convert.ToInt32(split[len-1]);
+                }
+                else 
+                if (s.StartsWith($"JOIN{sep}"))
+                    index = System.Convert.ToInt32(response);
 
                 res = response;
             }
