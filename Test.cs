@@ -9,22 +9,28 @@ class Test
     {
         Web.create(1);
         wait();
+        Debug.Log(Web.res);
 
         Web.join(1, Web.room, "nam", "par");
         wait();
+        Debug.Log(Web.res);
 
         Web.rwait();
         wait();
+        Debug.Log(Web.res);
 
-        Web.set("hi!");
+        string str = "Привет, Андрей!\nТебе нравится мой тест?\a";
+        Web.set(str);
         wait();
+        Debug.Log(Web.res);
 
         Web.get();
         wait();
         Debug.Log(Web.res);
-        
+
         Web.delete();
         wait();
+        Debug.Log(Web.res);
     }
     public static void delete_all(int count = 100)
     {
