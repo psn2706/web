@@ -5,9 +5,12 @@ class Test
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
         while (Web.res == "")
-            if (watch.ElapsedMilliseconds >= 10000)
-                Web.res = "-1";
-        ;
+            if (watch.ElapsedMilliseconds >= 6000)
+            {
+                Debug.Log("so long ... ");
+                break;
+            }
+
     }
     public static void try_divide_by_zero()
     {
@@ -25,9 +28,7 @@ class Test
     {
         try
         {
-            Web.create(1, 0);
-            wait();
-            Debug.Log(Web.res);
+            var watch = System.Diagnostics.Stopwatch.StartNew();
 
             Web.join(1, Web.room, "nam", "par");
             wait();
@@ -37,7 +38,7 @@ class Test
             wait();
             Debug.Log(Web.res);
 
-            string str = "Привет, Андрей!\nТебе нравится мой тест?";
+            string str = "hi!";
             Web.set(str);
             wait();
             Debug.Log(Web.res);
@@ -46,9 +47,12 @@ class Test
             wait();
             Debug.Log(Web.res);
 
-            Web.delete();
+            Web.clear();
             wait();
             Debug.Log(Web.res);
+            
+            watch.Stop();
+            Debug.Log($"time = {(int)watch.ElapsedMilliseconds} ms");
         }
         catch { Debug.Log("ops"); }
     }

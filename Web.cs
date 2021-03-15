@@ -64,23 +64,26 @@ public class Web
     public static void clear(int x) => getResponse($"CLEAR{sep}{x}");
     private static void getResponse(string str)
     {
+        //res = "";
+        //get(str);
         try
         {
             res = "";
+            if (thread_timer.IsAlive) thread_timer.Abort();
             thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
             thread_timer = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(timer));
             thread.Start(str);
-            thread_timer.Start(thread.ToString());
+            thread_timer.Start(thread);
         }
         catch
         {
             res = "thread problem";
         }
     }
-    private static void timer(object str)
+    private static void timer(object th)
     {
         System.Threading.Thread.Sleep(tick);
-        if (thread.IsAlive && thread.ToString() == (string)str)
+        if (thread.IsAlive && thread.Equals(th))
         {
             thread.Abort();
             res = "-1";
@@ -93,7 +96,7 @@ public class Web
             try
             {
                 response = string.Empty;
-
+                
                 // Connect to a remote device. 
                 connectDone = new System.Threading.ManualResetEvent(false);
                 sendDone = new System.Threading.ManualResetEvent(false);
