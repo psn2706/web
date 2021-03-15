@@ -10,7 +10,6 @@ public class StateObject
     // Received data string.  
     public System.Text.StringBuilder sb = new System.Text.StringBuilder();
 }
-
 public class Web
 {
     // The ip and port number for the remote device. 
@@ -25,8 +24,13 @@ public class Web
     // The response from the remote device.  
     private static string response = string.Empty;
 
-    // The locker used to sync threads
+    // Sync threads
     private static object locker = new object();
+    private static System.Threading.Thread thread;
+    private static System.Threading.Thread thread_timer;
+    private const int tick = 5000; 
+
+    // Separate requests
     private const string sep = "#";
 
     public static string res = string.Empty;
@@ -58,12 +62,23 @@ public class Web
         try
         {
             res = "";
-            var thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
+            thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
+            thread_timer = new System.Threading.Thread(new System.Threading.ThreadStart(timer));
             thread.Start(str);
+            thread_timer.Start();
         }
         catch
         {
             res = "thread problem";
+        }
+    }
+    private static void timer()
+    {
+        System.Threading.Thread.Sleep(tick);
+        if (thread.IsAlive)
+        {
+            thread.Abort();
+            res = "-1";
         }
     }
     private static void get(object str)
@@ -123,13 +138,14 @@ public class Web
                 else
                 if (s.StartsWith($"JOIN{sep}"))
                     index = System.Convert.ToInt32(response);
-
+                
+                thread_timer.Abort();
+                
                 res = response;
             }
             catch { res = "-1"; }
         }
     }
-
     private static void ConnectCallback(System.IAsyncResult ar)
     {
         try
