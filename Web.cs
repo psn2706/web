@@ -13,13 +13,19 @@ public class StateObject
 public class Web
 {
     // The ip and port number for the remote device. 
-    private static string ip = "3.16.165.168";
-    private static int port = 8000;
+    private const string ip = "3.16.165.168";
+    private const int port = 8000;
+    private const bool online = true;
 
     // ManualResetEvent instances signal completion.  
     private static System.Threading.ManualResetEvent connectDone;
     private static System.Threading.ManualResetEvent sendDone;
     private static System.Threading.ManualResetEvent receiveDone;
+
+    // Establish the remote endpoint for the socket.
+    private static System.Net.IPHostEntry ipHostInfo;
+    private static System.Net.IPAddress ipAddress;
+    private static System.Net.IPEndPoint remoteEP;
 
     // The response from the remote device.  
     private static string response = string.Empty;
@@ -101,12 +107,19 @@ public class Web
                 receiveDone = new System.Threading.ManualResetEvent(false);
 
                 // Establish the remote endpoint for the socket.
-                //System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-                //System.Net.IPAddress ipAddress = ipHostInfo.AddressList[1];
-                //System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
-                System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
-                System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
-                System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
+                if (online)
+                {
+                    ipHostInfo = System.Net.Dns.GetHostEntry(ip);
+                    ipAddress = ipHostInfo.AddressList[0];
+                    remoteEP = new System.Net.IPEndPoint(ipAddress, port);
+                }
+                else
+                {
+                    ipHostInfo = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                    ipAddress = ipHostInfo.AddressList[1];
+                    remoteEP = new System.Net.IPEndPoint(ipAddress, port);
+                }
+
 
                 // Create a TCP/IP socket.  
                 System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
@@ -115,20 +128,16 @@ public class Web
                 // Connect to the remote endpoint.  
                 client.BeginConnect(remoteEP,
                     new System.AsyncCallback(ConnectCallback), client);
+                connectDone.WaitOne();
                 if (res == "-1")
                     return;
-                connectDone.WaitOne();
 
                 // Send test data to the remote device.  
                 Send(client, (string)str);
-                if (res == "-1")
-                    return;
                 sendDone.WaitOne();
 
                 // Receive the response from the remote device.  
                 Receive(client);
-                if (res == "-1")
-                    return;
                 receiveDone.WaitOne();
 
                 // Release the socket.  
@@ -141,7 +150,6 @@ public class Web
                     return;
                 }
 
-
                 string s = (string)str;
 
                 if (s.StartsWith($"CREATE{sep}"))
@@ -150,8 +158,7 @@ public class Web
                     int len = split.Length;
                     int.TryParse(split[len - 1], out room);
                 }
-                else
-                if (s.StartsWith($"JOIN{sep}"))
+                else if (s.StartsWith($"JOIN{sep}"))
                     int.TryParse(response, out index);
 
                 res = response;
