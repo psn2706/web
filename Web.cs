@@ -26,8 +26,13 @@ public class Web
 
     // Sync threads
     private static object locker = new object();
-    private static System.Threading.Thread thread;
-    private static System.Threading.Thread thread_timer;
+
+    private static System.Threading.Thread thread = 
+        new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
+
+    private static System.Threading.Thread thread_timer = 
+        new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(timer));
+
     private const int tick = 5000; 
 
     // Separate requests
@@ -62,20 +67,21 @@ public class Web
         try
         {
             res = "";
+
             thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
-            thread_timer = new System.Threading.Thread(new System.Threading.ThreadStart(timer));
+            thread_timer = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(timer));
             thread.Start(str);
-            thread_timer.Start();
+            thread_timer.Start(thread.ToString());
         }
         catch
         {
             res = "thread problem";
         }
     }
-    private static void timer()
+    private static void timer(object str)
     {
         System.Threading.Thread.Sleep(tick);
-        if (thread.IsAlive)
+        if (thread.IsAlive && thread.ToString() == (string)str)
         {
             thread.Abort();
             res = "-1";
@@ -95,12 +101,12 @@ public class Web
                 receiveDone = new System.Threading.ManualResetEvent(false);
 
                 // Establish the remote endpoint for the socket.
-                //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-                //IPAddress ipAddress = ipHostInfo.AddressList[1];
-                //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
-                System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
-                System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
+                System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                System.Net.IPAddress ipAddress = ipHostInfo.AddressList[1];
                 System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
+                //System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
+                //System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
+                //System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
 
                 // Create a TCP/IP socket.  
                 System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
@@ -148,9 +154,7 @@ public class Web
                 else
                 if (s.StartsWith($"JOIN{sep}"))
                     index = System.Convert.ToInt32(response);
-                
-                thread_timer.Abort();
-                
+
                 res = response;
             }
             catch { res = "-1"; }
