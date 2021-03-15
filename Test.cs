@@ -5,9 +5,9 @@ class Test
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
         while (Web.res == "")
-            //if (watch.ElapsedMilliseconds >= 10000)
-            //    Web.res = "-1";
-            ;
+            if (watch.ElapsedMilliseconds >= 10000)
+                Web.res = "-1";
+        ;
     }
     public static void try_divide_by_zero()
     {
