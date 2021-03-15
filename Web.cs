@@ -109,14 +109,20 @@ public class Web
                 // Connect to the remote endpoint.  
                 client.BeginConnect(remoteEP,
                     new System.AsyncCallback(ConnectCallback), client);
+                if (res == "-1")
+                    return;
                 connectDone.WaitOne();
 
                 // Send test data to the remote device.  
                 Send(client, (string)str);
+                if (res == "-1")
+                    return;
                 sendDone.WaitOne();
 
                 // Receive the response from the remote device.  
                 Receive(client);
+                if (res == "-1")
+                    return;
                 receiveDone.WaitOne();
 
                 // Release the socket.  
@@ -124,7 +130,11 @@ public class Web
                 client.Close();
 
                 if (response == string.Empty)
-                    response = "-1";
+                {
+                    res = "-1";
+                    return;
+                }
+
 
                 string s = (string)str;
 
