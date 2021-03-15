@@ -55,9 +55,16 @@ public class Web
     public static void clear(int x) => getResponse($"CLEAR{sep}{x}");
     private static void getResponse(string str)
     {
-        res = "";
-        var thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
-        thread.Start(str);
+        try
+        {
+            res = "";
+            var thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
+            thread.Start(str);
+        }
+        catch
+        {
+            res = "thread problem";
+        }
     }
     private static void get(object str)
     {
