@@ -27,13 +27,13 @@ public class Web
     // Sync threads
     private static object locker = new object();
 
-    private static System.Threading.Thread thread = 
+    private static System.Threading.Thread thread =
         new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
 
-    private static System.Threading.Thread thread_timer = 
+    private static System.Threading.Thread thread_timer =
         new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(timer));
 
-    private const int tick = 5000; 
+    private const int tick = 5000;
 
     // Separate requests
     private const string sep = "#";
@@ -64,8 +64,6 @@ public class Web
     public static void clear(int x) => getResponse($"CLEAR{sep}{x}");
     private static void getResponse(string str)
     {
-        //res = "";
-        //get(str);
         try
         {
             res = "";
@@ -96,7 +94,7 @@ public class Web
             try
             {
                 response = string.Empty;
-                
+
                 // Connect to a remote device. 
                 connectDone = new System.Threading.ManualResetEvent(false);
                 sendDone = new System.Threading.ManualResetEvent(false);
@@ -150,12 +148,11 @@ public class Web
                 {
                     string[] split = response.Split();
                     int len = split.Length;
-
-                    room = System.Convert.ToInt32(split[len - 1]);
+                    int.TryParse(split[len - 1], out room);
                 }
                 else
                 if (s.StartsWith($"JOIN{sep}"))
-                    index = System.Convert.ToInt32(response);
+                    int.TryParse(response, out index);
 
                 res = response;
             }

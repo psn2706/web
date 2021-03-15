@@ -10,7 +10,6 @@ class Test
                 Debug.Log("so long ... ");
                 break;
             }
-
     }
     public static void try_divide_by_zero()
     {
@@ -29,6 +28,9 @@ class Test
         try
         {
             var watch = System.Diagnostics.Stopwatch.StartNew();
+            Web.create(1, 0);
+            wait();
+            Debug.Log(Web.res);
 
             Web.join(1, Web.room, "nam", "par");
             wait();
