@@ -3,7 +3,25 @@ class Test
 {
     static void wait()
     {
-        while (Web.res == "") ;
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        while (Web.res == "")
+            if (watch.ElapsedMilliseconds >= 1000)
+            {
+                Web.res = "-1";
+                break;
+            }
+    }
+    public static void try_divide_by_zero()
+    {
+        try
+        {
+            int x = 0, y;
+            y = 1 / x;
+        }
+        catch
+        {
+            Debug.Log("Divide by zero!");
+        }
     }
     public static void test_message()
     {
