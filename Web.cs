@@ -57,77 +57,75 @@ public class Web
     {
         try
         {
-            res = "";
-            var thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
-            thread.Start(str);
+            get(str);
         }
         catch
         {
-            res = "thread problem";
+            res = "-10";
         }
     }
     private static void get(object str)
     {
-        lock (locker)
+        //lock (locker)
+        //{
+        try
         {
-            try
+            response = string.Empty;
+
+            // Connect to a remote device. 
+            connectDone = new System.Threading.ManualResetEvent(false);
+            sendDone = new System.Threading.ManualResetEvent(false);
+            receiveDone = new System.Threading.ManualResetEvent(false);
+
+            // Establish the remote endpoint for the socket.
+            //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+            //IPAddress ipAddress = ipHostInfo.AddressList[1];
+            //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
+            System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
+            System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
+            System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
+
+            // Create a TCP/IP socket.  
+            System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
+                System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+
+            // Connect to the remote endpoint.  
+            client.BeginConnect(remoteEP,
+                new System.AsyncCallback(ConnectCallback), client);
+            connectDone.WaitOne();
+
+            // Send test data to the remote device.  
+            Send(client, (string)str);
+            sendDone.WaitOne();
+
+            // Receive the response from the remote device.  
+            Receive(client);
+            receiveDone.WaitOne();
+
+            // Release the socket.  
+            client.Shutdown(System.Net.Sockets.SocketShutdown.Both);
+            client.Close();
+
+            if (response == string.Empty)
+                response = "-1";
+
+            string s = (string)str;
+
+            if (s.StartsWith($"CREATE{sep}"))
             {
-                response = string.Empty;
+                string[] split = response.Split();
+                int len = split.Length;
 
-                // Connect to a remote device. 
-                connectDone = new System.Threading.ManualResetEvent(false);
-                sendDone = new System.Threading.ManualResetEvent(false);
-                receiveDone = new System.Threading.ManualResetEvent(false);
-
-                // Establish the remote endpoint for the socket.
-                //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-                //IPAddress ipAddress = ipHostInfo.AddressList[1];
-                //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
-                System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
-                System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
-                System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
-
-                // Create a TCP/IP socket.  
-                System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
-                    System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
-
-                // Connect to the remote endpoint.  
-                client.BeginConnect(remoteEP,
-                    new System.AsyncCallback(ConnectCallback), client);
-                connectDone.WaitOne();
-
-                // Send test data to the remote device.  
-                Send(client, (string)str);
-                sendDone.WaitOne();
-
-                // Receive the response from the remote device.  
-                Receive(client);
-                receiveDone.WaitOne();
-
-                // Release the socket.  
-                client.Shutdown(System.Net.Sockets.SocketShutdown.Both);
-                client.Close();
-
-                if (response == string.Empty)
-                    response = "-1";
-
-                string s = (string)str;
-
-                if (s.StartsWith($"CREATE{sep}"))
-                {
-                    string[] split = response.Split();
-                    int len = split.Length;
-
-                    room = System.Convert.ToInt32(split[len-1]);
-                }
-                else 
-                if (s.StartsWith($"JOIN{sep}"))
-                    index = System.Convert.ToInt32(response);
-
-                res = response;
+                room = System.Convert.ToInt32(split[len - 1]);
             }
-            catch { res = "-1"; }
+            else
+            if (s.StartsWith($"JOIN{sep}"))
+                index = System.Convert.ToInt32(response);
+
+            res = response;
         }
+        catch { res = "-1"; }
+        //}
     }
 
     private static void ConnectCallback(System.IAsyncResult ar)
