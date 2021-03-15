@@ -67,7 +67,6 @@ public class Web
         try
         {
             res = "";
-
             thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
             thread_timer = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(timer));
             thread.Start(str);
@@ -101,12 +100,12 @@ public class Web
                 receiveDone = new System.Threading.ManualResetEvent(false);
 
                 // Establish the remote endpoint for the socket.
-                System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-                System.Net.IPAddress ipAddress = ipHostInfo.AddressList[1];
-                System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
-                //System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
-                //System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
+                //System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                //System.Net.IPAddress ipAddress = ipHostInfo.AddressList[1];
                 //System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
+                System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
+                System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
+                System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
 
                 // Create a TCP/IP socket.  
                 System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
