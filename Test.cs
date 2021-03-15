@@ -25,7 +25,7 @@ class Test
     {
         try
         {
-            Web.create(1);
+            Web.create(1, 0);
             wait();
             Debug.Log(Web.res);
 
