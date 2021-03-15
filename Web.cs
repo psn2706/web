@@ -57,75 +57,77 @@ public class Web
     {
         try
         {
-            get(str);
+            res = "";
+            var thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(get));
+            thread.Start(str);
         }
         catch
         {
-            res = "-10";
+            res = "thread problem";
         }
     }
     private static void get(object str)
     {
-        //lock (locker)
-        //{
-        try
+        lock (locker)
         {
-            response = string.Empty;
-
-            // Connect to a remote device. 
-            connectDone = new System.Threading.ManualResetEvent(false);
-            sendDone = new System.Threading.ManualResetEvent(false);
-            receiveDone = new System.Threading.ManualResetEvent(false);
-
-            // Establish the remote endpoint for the socket.
-            //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            //IPAddress ipAddress = ipHostInfo.AddressList[1];
-            //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
-            System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
-            System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
-            System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
-
-            // Create a TCP/IP socket.  
-            System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
-                System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
-
-            // Connect to the remote endpoint.  
-            client.BeginConnect(remoteEP,
-                new System.AsyncCallback(ConnectCallback), client);
-            connectDone.WaitOne();
-
-            // Send test data to the remote device.  
-            Send(client, (string)str);
-            sendDone.WaitOne();
-
-            // Receive the response from the remote device.  
-            Receive(client);
-            receiveDone.WaitOne();
-
-            // Release the socket.  
-            client.Shutdown(System.Net.Sockets.SocketShutdown.Both);
-            client.Close();
-
-            if (response == string.Empty)
-                response = "-1";
-
-            string s = (string)str;
-
-            if (s.StartsWith($"CREATE{sep}"))
+            try
             {
-                string[] split = response.Split();
-                int len = split.Length;
+                response = string.Empty;
 
-                room = System.Convert.ToInt32(split[len - 1]);
+                // Connect to a remote device. 
+                connectDone = new System.Threading.ManualResetEvent(false);
+                sendDone = new System.Threading.ManualResetEvent(false);
+                receiveDone = new System.Threading.ManualResetEvent(false);
+
+                // Establish the remote endpoint for the socket.
+                //IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+                //IPAddress ipAddress = ipHostInfo.AddressList[1];
+                //IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
+                System.Net.IPHostEntry ipHostInfo = System.Net.Dns.GetHostEntry(ip);
+                System.Net.IPAddress ipAddress = ipHostInfo.AddressList[0];
+                System.Net.IPEndPoint remoteEP = new System.Net.IPEndPoint(ipAddress, port);
+
+                // Create a TCP/IP socket.  
+                System.Net.Sockets.Socket client = new System.Net.Sockets.Socket(ipAddress.AddressFamily,
+                    System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+
+                // Connect to the remote endpoint.  
+                client.BeginConnect(remoteEP,
+                    new System.AsyncCallback(ConnectCallback), client);
+                connectDone.WaitOne();
+
+                // Send test data to the remote device.  
+                Send(client, (string)str);
+                sendDone.WaitOne();
+
+                // Receive the response from the remote device.  
+                Receive(client);
+                receiveDone.WaitOne();
+
+                // Release the socket.  
+                client.Shutdown(System.Net.Sockets.SocketShutdown.Both);
+                client.Close();
+
+                if (response == string.Empty)
+                    response = "-1";
+
+                string s = (string)str;
+
+                if (s.StartsWith($"CREATE{sep}"))
+                {
+                    string[] split = response.Split();
+                    int len = split.Length;
+
+                    room = System.Convert.ToInt32(split[len - 1]);
+                }
+                else
+                if (s.StartsWith($"JOIN{sep}"))
+                    index = System.Convert.ToInt32(response);
+
+                res = response;
             }
-            else
-            if (s.StartsWith($"JOIN{sep}"))
-                index = System.Convert.ToInt32(response);
-
-            res = response;
+            catch { res = "-1"; }
         }
-        catch { res = "-1"; }
-        //}
     }
 
     private static void ConnectCallback(System.IAsyncResult ar)
@@ -141,7 +143,7 @@ public class Web
             // Signal that the connection has been made.  
             connectDone.Set();
         }
-        catch { }
+        catch { res = "-1"; }
     }
 
     private static void Receive(System.Net.Sockets.Socket client)
@@ -156,7 +158,7 @@ public class Web
             client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                 new System.AsyncCallback(ReceiveCallback), state);
         }
-        catch { }
+        catch { res = "-1"; }
     }
 
     private static void ReceiveCallback(System.IAsyncResult ar)
@@ -189,7 +191,7 @@ public class Web
                 receiveDone.Set();
             }
         }
-        catch { }
+        catch { res = "-1"; }
     }
 
     private static void Send(System.Net.Sockets.Socket client, string data)
@@ -203,7 +205,7 @@ public class Web
             client.BeginSend(byteData, 0, byteData.Length, 0,
                 new System.AsyncCallback(SendCallback), client);
         }
-        catch { }
+        catch { res = "-1"; }
     }
 
     private static void SendCallback(System.IAsyncResult ar)
@@ -219,6 +221,6 @@ public class Web
             // Signal that all bytes have been sent.  
             sendDone.Set();
         }
-        catch { }
+        catch { res = "-1"; }
     }
 }
