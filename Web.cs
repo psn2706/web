@@ -107,6 +107,7 @@ public class Web
                 receiveDone = new System.Threading.ManualResetEvent(false);
 
                 // Establish the remote endpoint for the socket.
+                #pragma warning disable CS0162 // Обнаружен недостижимый код
                 if (online)
                 {
                     ipHostInfo = System.Net.Dns.GetHostEntry(ip);
@@ -119,6 +120,7 @@ public class Web
                     ipAddress = ipHostInfo.AddressList[1];
                     remoteEP = new System.Net.IPEndPoint(ipAddress, port);
                 }
+                #pragma warning restore CS0162 // Обнаружен недостижимый код
 
 
                 // Create a TCP/IP socket.  
