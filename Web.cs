@@ -61,11 +61,11 @@ public class Web
     public static void rwait() => getResponse($"RWAIT{sep}{room}");
     public static void names() => getResponse($"NAMES{sep}{room}");
     public static void parms() => getResponse($"PARMS{sep}{room}");
-    public static void set(string str) => getResponse($"SET{sep}{room}{sep}{str}");
     public static void delete() => getResponse($"DELETE{sep}{room}");
     public static void delete(int x) => getResponse($"DELETE{sep}{x}");
     public static void clear() => getResponse($"CLEAR{sep}{room}");
     public static void clear(int x) => getResponse($"CLEAR{sep}{x}");
+    public static void set(string str) => getResponse($"SET{sep}{room}{sep}{str}");
     public static void get() => getResponse($"GET{sep}{room}");
     public static void wait() => getResponse($"WAIT{sep}{room}{sep}{index}");
     private static void getResponse(string str)
